@@ -1,0 +1,30 @@
+name: daily-stamp
+
+on:
+  schedule:
+    - cron: "5 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 갱신일을 오늘 날짜로 변경
+        run: |
+          TODAY=$(TZ=Asia/Seoul date +%F)
+          sed -i "s/\"stamp\": \"[0-9-]\{10\}\"/\"stamp\": \"$TODAY\"/" japan-races.json
+          python3 -c "import json; json.load(open('japan-races.json')); print('JSON 유효')"
+          grep -m1 stamp japan-races.json
+
+      - name: 커밋
+        run: |
+          TODAY=$(TZ=Asia/Seoul date +%F)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "갱신일 $TODAY" || echo "변경 없음 — 커밋 생략"
+          git push
